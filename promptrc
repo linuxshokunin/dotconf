@@ -1,0 +1,58 @@
+prompt_init()
+{
+	BOLD="\[\033[1m\]"
+	RED="\[\033[1;31m\]"
+	GREEN="\[\e[32;1m\]"
+	BLUE="\[\e[1;34m\]"
+	#YELLOW="\[\e[1;33m\]"
+  YELLOW="\[\e[38;5;11m\]"
+	CYAN="\[\e[1;36m\]"
+	BROWN="\[\e[0;33m\]"
+	PURPLE="\[\e[1;35m\]"
+  ORANGE="\[\e[38;5;214m\]"
+  PINK="\[\e[38;5;219m\]"
+  MAGENTA="\[\e[95m\]"
+	OFF="\[\033[m\]"
+	WRAP_OFF="\[\e[?7l"
+	WRAP_ON="\[\e[?7h"
+
+	prompt_colour=${BLUE}
+}
+
+branchList(){
+	git_colour=$1
+	git_colour=$(echo $git_colour|sed s'!\\!\\\\!g')
+  colour_off=$OFF
+	colour_off=$(echo $colour_off|sed s'!\\!\\\\!g')
+  echo -n ${OFF}
+  for i in $(git branch|sed 's!\* \(.*\)!'"${git_colour}"'\1'"${colour_off}"'!');do echo -n "$i ";done
+  echo -e "\b"
+}
+
+nsList(){
+  CURNS=$(kubectl config current-context 2>/dev/null)
+}
+
+set_prompt(){
+  nsList
+	DASHES="$(printf '\u2500%0.s' {1..300})"
+	local git_top_dir=$(git rev-parse --show-toplevel 2>/dev/null)
+	if [[ ! -z $git_top_dir ]] ; then
+		if git status -s |grep -qsP "^( *M|\?\?) ";then
+			local git_colour=$RED
+		elif git status | grep -sq "Your branch is ahead";then
+			local git_colour=$YELLOW
+		else
+			local git_colour=$GREEN
+		fi
+
+		branch=$(branchList ${git_colour})
+    PS1="${prompt_colour}┌─${WRAP_OFF}${ORANGE}[\w/]${OFF}${prompt_colour}──${BOLD}${CYAN}[${CURNS}]${OFF}${prompt_colour}──${BOLD}${PURPLE}[$branch${PURPLE}]${OFF}${prompt_colour}$DASHES${WRAP_ON}\n${git_colour}>>${OFF} "
+	else
+    PS1="${prompt_colour}┌─${WRAP_OFF}${ORANGE}[\w/]${OFF}${prompt_colour}──${BOLD}${CYAN}[${CURNS}]${OFF}${prompt_colour}$DASHES${WRAP_ON}\n${MAGENTA}>>${OFF} "
+	fi
+
+}
+
+prompt_init
+PROMPT_COMMAND=set_prompt
